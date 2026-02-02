@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/winnerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Tratě ČR
+    fetch('cr-railways.geojson')
+      .then(response => response.json())
+      .then(data => {
+        data.features.forEach(feature => {
+          if (feature.geometry.type === 'LineString') {
+            const points = feature.geometry.coordinates.map(p => new THREE.Vector3(p[0], p[1], 0));
+            const geom = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color: 0x333333 }));
+            scene.add(line);
+          }
+        });
+      });
+
+    // Brejlovec
+    const loader = new THREE.GLTFLoader();
+    loader.load('brejlovec.glb', (gltf) => {
+      scene.add(gltf.scene);
+      gltf.scene.position.set(15.5, 49.8, 0);
+    });
+
+    // Stromy (podle Street View)
+    const lipaLoader = new THREE.GLTFLoader();
+    lipaLoader.load('lipa.glb', (gltf) => {
+      const lipa = gltf.scene;
+      lipa.position.set(15.6, 49.8, 0);
+      lipa.scale.set(1, 1.5, 1); // výška 1.5x
+      scene.add(lipa);
+    });
+
+    const jabloňLoader = new THREE.GLTFLoader();
+    jabloňLoader.load('jablon_sucha.glb', (gltf) => {
+      const jabloň = gltf.scene;
+      jabloň.position.set(15.7, 49.8, 0);
+      jabloň.scale.set(0.8, 1.2, 0.8); // výška 1.2x
+      scene.add(jabloň);
+    });
+
+    // Ovládání
+    let speed = 0;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'w') speed = 0.1;
+      if (e.key === 's') speed = -0.1;
+    });
+    document.addEventListener('keyup', () => speed = 0);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (scene.children[0]) {
+        scene.children[0].position.z += speed;
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
